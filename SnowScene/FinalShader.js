@@ -7,7 +7,7 @@ THREE.FinalShader = {
 	uniforms: {
 
 		"tDiffuse": { type: "t", value: 0, texture: null },
-		"tSnow":    { type: "t", value: 0, texture: null },
+		"tSnow":    { type: "t", value: 1, texture: null },
 		"mixRatio":  { type: "f", value: 0.5 },
 		"opacity":   { type: "f", value: 1.0 }
 
