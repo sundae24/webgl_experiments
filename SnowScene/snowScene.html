@@ -1,32 +1,31 @@
 <!doctype html>
+<!-- A snow scene created by Jing Jin. https://github.com/sundae24/webgl_experiments/tree/master/SnowScene --> 
 <html>
 	<head>
 		<meta charset="utf-8" />
 		<title>Snow Test</title>
 		<style>
 			#container {
-				background: #00DD00;
-				width: 		800px;
-				height: 	600px;
+				background: #000000;
 			}
 		</style>
 	</head>
 	<body onload="webGLStart();">
-
+		
 		<div id="container"></div>
 		<script src="Three.min.js"></script>
-		<script src="TrackballControls.js"></script>
 		
-		<script src="CopyShader.js"></script>
 		<script src="SnowShader.js"></script>
 		<script src="FinalShader.js"></script>
-		<script src="DotScreenShader.js"></script>
+		<script src="SnowParticleShader.js"></script>
 
+		<script src="CopyShader.js"></script>
 		<script src="EffectComposer.js"></script>
 		<script src="RenderPass.js"></script>
 		<script src="MaskPass.js"></script>
 		<script src="ShaderPass.js"></script>
 		
+		<script src="stats.min.js"></script>
 		
 		<script type="text/javascript" src="scene.js"></script>
 

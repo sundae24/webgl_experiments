@@ -1,9 +1,12 @@
-
-var camera, scene, snowScene, renderer, controls, composer, snowComposer;
+/**
+ * A snow scene created by Jing Jin. https://github.com/sundae24/webgl_experiments/tree/master/SnowScene
+ */
+ 
+var stats, camera, scene, snowScene, renderer, controls, composer, snowComposer, particleSystem, clock;
 
 var snowShader = THREE.SnowShader;
 var uniforms = THREE.UniformsUtils.clone( snowShader.uniforms );
-var parameters = { fragmentShader: snowShader.fragmentShader, vertexShader: snowShader.vertexShader, uniforms: uniforms };
+var parameters = { fragmentShader: snowShader.fragmentShader, vertexShader: snowShader.vertexShader, uniforms: uniforms};//, blending: THREE.AdditiveBlending};
 var snowMaterial = new THREE.ShaderMaterial( parameters );
 
 function init()
@@ -13,20 +16,26 @@ function init()
 	var canvasRatio = canvasWidth / canvasHeight;
 	
 	// camera
-	camera = new THREE.PerspectiveCamera(45, canvasRatio, 1, 8000);
-	camera.position.set(0, 100, 300);
+	camera = new THREE.PerspectiveCamera(45, canvasRatio, 1, 1000);
+	camera.position.set(0, 100, 380);
 	
 	// renderer
 	renderer = new THREE.WebGLRenderer({ antialias:true });
 	renderer.setSize(canvasWidth, canvasHeight);
 	renderer.autoClear = false;
 	
+	// shadow settings
+	renderer.shadowMapEnabled = true;
+	renderer.shadowMapSoft = true;
+
 	container = document.getElementById( 'container' );
 	container.appendChild( renderer.domElement );
 	
-	// controls
-	controls = new THREE.TrackballControls( camera, renderer.domElement );
-	controls.addEventListener( 'change', render );
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.top = '10px';
+	stats.domElement.style.zIndex = 100;
+	container.appendChild( stats.domElement );
 	
 	fillScene();
 	fillSnowScene();
@@ -41,14 +50,11 @@ function init()
 	snowComposer.addPass( snowPass );
 	
 	// add snow and model together
-	var renderTargetFinal = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, renderTargetParameters );
-	composer = new THREE.EffectComposer( renderer, renderTargetFinal );
+	composer = new THREE.EffectComposer( renderer );
 	var modelPass = new THREE.RenderPass( scene, camera );
 	var finalPass = new THREE.ShaderPass( THREE.FinalShader );
-	finalPass.uniforms[ 'tDiffuse' ].texture = composer.renderTarget2;
-	finalPass.uniforms[ 'tSnow' ].texture = snowComposer.renderTarget2;
-	finalPass.uniforms[ 'mixRatio' ].value = 1.0;
-	finalPass.needsSwap = true;
+	finalPass.uniforms[ 'tColor' ].value = composer.renderTarget2;
+	finalPass.uniforms[ 'tSnow' ].value = snowComposer.renderTarget2;
 	finalPass.renderToScreen = true;
 	composer.addPass( modelPass );
 	composer.addPass( finalPass );
@@ -72,9 +78,9 @@ function createSnowMan( bModelPass )
 	var hatPos = new THREE.Vector3(0, headPos.y + hatOffset, 0);
 	
 	// materials
-	var snowManMaterial = bModelPass ? new THREE.MeshLambertMaterial({ color: 0xCC0000 }) : snowMaterial;
-	var handMaterial = bModelPass ? new THREE.MeshLambertMaterial({ color: 0x00CC00 }) : snowMaterial;
-	var hatMaterial = bModelPass ? new THREE.MeshLambertMaterial({ color: 0x0000CC }) : snowMaterial;
+	var snowManMaterial = bModelPass ? new THREE.MeshPhongMaterial({ ambient: 0xFFFFFF, color: 0xE8E8E8 }) : snowMaterial;
+	var handMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0x993300 }) : snowMaterial;
+	var hatMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0xFF0000}) : snowMaterial;
 	
 	// head, body
 	var head = new THREE.Mesh(new THREE.SphereGeometry(headRadius, 16, 16), snowManMaterial);
@@ -107,12 +113,20 @@ function createSnowMan( bModelPass )
 	handL.add(handPart1);
 	handL.add(handPart2);
 	handL.add(handPart3);
-	// todo: rotate around Y
 	handL.rotation.set(0, 0, handAngle);
 	handL.position.set(-25, bodyPos.y + 12, 0);
 	var handR = handL.clone();
 	handR.rotation.setZ(-handAngle);
 	handR.position.set(25, bodyPos.y + 5, 0);
+	
+	// shadow
+	head.castShadow = true;
+	body.castShadow = true;
+	hatBrim.castShadow = true;
+	hatCrown.castShadow = true;
+	handPart1.castShadow = true;
+	handPart2.castShadow = true;
+	handPart3.castShadow = true;
 	
 	// combine snowman
 	var snowMan = new THREE.Object3D();
@@ -121,8 +135,10 @@ function createSnowMan( bModelPass )
 	snowMan.add(body);
 	snowMan.add(handL);
 	snowMan.add(handR);
-	snowMan.rotation.setY(0.4);
-	snowMan.position.set(-120, 0, 30);
+	snowMan.rotation.set(0.1, 0.4, -0.1);
+	snowMan.position.set(-110, 0, 30);
+	
+	snowMan.castShadow = true;
 	
 	if( bModelPass )
 	{
@@ -136,19 +152,26 @@ function createSnowMan( bModelPass )
 
 function createCabin( bModelPass )
 {
-	var carbinMaterial = bModelPass ? new THREE.MeshLambertMaterial({ color: 0x00B0CC }) : snowMaterial;
+	var carbinMainMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0xCC66CC }) : snowMaterial;
+	var carbinRoofMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0xCC33CC }) : snowMaterial;
+	var carbinChimneyMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0xCC00CC }) : snowMaterial;
 	
-	var carbinMain = new THREE.Mesh(new THREE.CubeGeometry(250, 100, 100, 1, 1, 1), carbinMaterial);
-	var carbinRoof = new THREE.Mesh(new THREE.CylinderGeometry(100, 250, 60, 4, 4), carbinMaterial);
-	var carbinChimney = new THREE.Mesh(new THREE.CubeGeometry(30, 60, 30, 1, 1, 1), carbinMaterial);
-	carbinMain.position.setY(50);
-	carbinRoof.rotation.setY(Math.PI/4);
+	var carbinMain = new THREE.Mesh(new THREE.CubeGeometry(250, 100, 100, 1, 1, 1), carbinMainMaterial);
+	var carbinRoof = new THREE.Mesh(new THREE.CylinderGeometry(100, 250, 60, 4, 4), carbinRoofMaterial);
+	var carbinChimney = new THREE.Mesh(new THREE.CubeGeometry(30, 60, 30, 1, 1, 1), carbinChimneyMaterial);
+	carbinMain.position.setY(48);
+	carbinRoof.rotation.set(0, Math.PI/4, 0.025);
 	var carbinRoof_obj = new THREE.Object3D();
 	carbinRoof_obj.add(carbinRoof);
 	carbinRoof_obj.scale.set(250/300, 1, 120/300);	
-	carbinRoof_obj.position.setY(130);
+	carbinRoof_obj.position.setY(120);
 	carbinChimney.rotation.setX(0.2);
 	carbinChimney.position.set(100, 150, 0);
+	
+	// shadow
+	carbinMain.castShadow = true;
+	carbinMain.receiveShadow = true;
+	carbinRoof.castShadow = true;
 	
 	var carbin = new THREE.Object3D();
 	carbin.add(carbinMain);
@@ -169,8 +192,10 @@ function createCabin( bModelPass )
 
 function createGround( bModelPass )
 {
-	var groundMaterial = bModelPass ? new THREE.MeshLambertMaterial({ color: 0x0000CC }) : snowMaterial;
+	var groundMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0x993300 }) : snowMaterial;
 	var ground = new THREE.Mesh(new THREE.CubeGeometry(500, 5, 300, 1, 1, 1), groundMaterial);
+	
+	ground.receiveShadow = true;
 	
 	if( bModelPass )
 	{
@@ -182,23 +207,131 @@ function createGround( bModelPass )
 	}
 }
 
+function createGrass( bModelPass )
+{
+	var grassMaterial = bModelPass ? new THREE.MeshPhongMaterial({ color: 0x009933 }) : snowMaterial;
+	var grassGeo = new THREE.CylinderGeometry(0, 20, 40, 14, 2, false);
+	var grassMesh = new THREE.Mesh(grassGeo, grassMaterial);
+	
+	var grassMesh1 = grassMesh.clone();
+	var grassMesh2 = grassMesh.clone();
+	var grassMesh3 = grassMesh.clone();
+	var grassMesh4 = grassMesh.clone();
+	var grassMesh5 = grassMesh.clone();
+	
+	grassMesh.scale.set(1.0, 1.0, 0.5);
+	grassMesh.position.set(150, 20, 100);
+	grassMesh1.scale.set(0.8, 0.5, 0.3);
+	grassMesh1.position.set(10, 10, 50);
+	grassMesh2.scale.set(0.8, 0.7, 0.3);
+	grassMesh2.position.set(90, 14, 80);
+	grassMesh3.scale.set(0.5, 0.8, 0.5);
+	grassMesh3.position.set(-150, 16, 100);
+	grassMesh4.scale.set(1.2, 1.2, 0.8);
+	grassMesh4.position.set(-200, 70, -70);
+	grassMesh4.rotation.setY(1.0);
+	grassMesh5.scale.set(2.0, 2.0, 1.0);
+	grassMesh5.position.set(-200, 40, -70);
+	grassMesh5.rotation.setY(1.0);
+	
+	// shadow
+	grassMesh.castShadow = true;
+	grassMesh1.castShadow = true;
+	grassMesh2.castShadow = true;
+	grassMesh3.castShadow = true;
+	grassMesh4.castShadow = true;
+	grassMesh5.castShadow = true;
+	
+	var grass = new THREE.Object3D();
+	grass.add(grassMesh);
+	grass.add(grassMesh1);
+	grass.add(grassMesh2);
+	grass.add(grassMesh3);
+	grass.add(grassMesh4);
+	grass.add(grassMesh5);
+	
+	if( bModelPass )
+	{
+		scene.add(grass);
+	}
+	else 
+	{
+		snowScene.add(grass);
+	}
+}
+
+function rand( value )
+{
+	return (Math.random() - 0.5) * value; 
+}
+
 function fillScene()
 {
 	scene = new THREE.Scene();
-	
-	// lights
-	scene.add(new THREE.AmbientLight(0x222222));
-	var light = new THREE.DirectionalLight(0xFFFFFF, 0.7);
-	light.position.set(200, 500, 500);
-	scene.add(light);
-
-	// and the camera
-	//scene.add(camera);
 	
 	// geometry
 	createSnowMan(true);
 	createCabin(true);
 	createGround(true);
+	createGrass(true);
+	
+	var planeGeometry = new THREE.PlaneGeometry(1024,1024);
+				
+	var material = new THREE.MeshBasicMaterial({color: 0x808080, map: THREE.ImageUtils.loadTexture( "textures/background.jpg") });//"https://dl.dropboxusercontent.com/u/35227757/WebGL/textures/background.jpg") });
+	var plane = new THREE.Mesh(planeGeometry, material);
+	plane.position.set(0, 0, -150);
+	scene.add(plane);
+	
+	// lights
+	var dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.2);
+	dirLight.position.set(0, 100, 100);
+	dirLight.target.position.set(0, 0, 0);
+	// dirLight.shadowCameraVisible = true;
+	scene.add( dirLight );
+	
+	var spotLight = new THREE.SpotLight();
+	spotLight.shadowCameraNear = 50; 
+	spotLight.shadowCameraFar = 500; 
+	//spotLight.shadowCameraVisible = true;
+	spotLight.castShadow = true;
+	spotLight.position.set(-200, 200, 150);
+	spotLight.intensity = 0.5;
+	scene.add(spotLight);
+
+	var dirLight2 = new THREE.DirectionalLight(0xFFFFFF, 0.2);
+	dirLight2.position.set(-110, 0, 100);
+	dirLight2.target.position.set(-110, 0, 30);
+	scene.add( dirLight2 );
+	
+	// particles
+	var numParticles = 300,
+		width = 500,
+		height = 400,
+		depth = 500,
+		systemGeometry = new THREE.Geometry();
+		
+	var snowParticleShader = THREE.SnowParticleShader;
+	var uniformsSnowParticleShader = THREE.UniformsUtils.clone( snowParticleShader.uniforms );
+	var parametersSnowParticleShader = { fragmentShader: snowParticleShader.fragmentShader, vertexShader: snowParticleShader.vertexShader, 
+										 uniforms: uniformsSnowParticleShader, blending: THREE.AdditiveBlending, transparent: true, depthTest: false };
+	var snowParticleMaterial = new THREE.ShaderMaterial( parametersSnowParticleShader );
+		
+	for( var i = 0; i < numParticles; i++ ) {
+        var vertex = new THREE.Vector3(
+                rand( width ),
+                rand( height ),
+                rand( depth )
+        );
+
+        systemGeometry.vertices.push( vertex );
+	}
+	
+	particleSystem = new THREE.ParticleSystem( systemGeometry, snowParticleMaterial );
+	particleSystem.material.uniforms.tSnowFlake.value = THREE.ImageUtils.loadTexture( "textures/snowflake.png");//"https://dl.dropboxusercontent.com/u/35227757/WebGL/textures/snowflake.png" );
+	scene.add( particleSystem );
+	
+	clock = new THREE.Clock();
+	
 }
 
 function fillSnowScene()
@@ -207,12 +340,19 @@ function fillSnowScene()
 	createSnowMan(false);
 	createCabin(false);
 	createGround(false);
+	createGrass(false);
 }
 
 function animate() 
 {
 	requestAnimationFrame( animate );
-	controls.update();
+	render();
+	stats.update();
+	
+	var delta = clock.getDelta();
+	var elapsedTime = clock.getElapsedTime();
+	snowMaterial.uniforms.snowThickness.value += elapsedTime * 0.0001;
+	particleSystem.material.uniforms.elapsedTime.value = elapsedTime * 10;
 }
 
 function webGLStart() 

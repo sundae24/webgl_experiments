@@ -1,20 +1,24 @@
 /**
- *
+ * A snow scene created by Jing Jin. https://github.com/sundae24/webgl_experiments/tree/master/SnowScene
  */
 
 THREE.SnowShader = {
 
 	uniforms: {
-
+	
+		"snowThickness":   { type: "f", value: 0.0 }
+		
 	},
 
 	vertexShader: [
 
 		"varying vec2 vUv;",
+		"varying vec3 vNormal;",
 
 		"void main() {",
 
 			"vUv = uv;",
+			"vNormal = normalize( normalMatrix * normal );",
 			"gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
 
 		"}"
@@ -23,12 +27,18 @@ THREE.SnowShader = {
 
 	fragmentShader: [
 	
+		"uniform float snowThickness;",
+	
 		"varying vec2 vUv;",
+		"varying vec3 vNormal;",
 
 		"void main(void)",
 		"{",
 		
-			"gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0); ",
+			"float d = dot(vNormal, vec3(0.0, 1.0, 0.0));",
+			"vec4 snowColor = d > 0.0 ? vec4(d, d, d, 1.0) : vec4(0.0, 0.0, 0.0, 1.0);",
+			"float randomValue = fract(sin(dot(vUv ,vec2(12.9898,78.233))) * 43758.5453);",
+			"gl_FragColor = min(snowColor * snowThickness, vec4(1.0, 1.0, 1.0, 0.3));",
 			
 		"}"
 
