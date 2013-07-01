@@ -2,7 +2,7 @@
  * A snow scene created by Jing Jin. https://github.com/sundae24/webgl_experiments/tree/master/SnowScene
  */
  
-var stats, camera, scene, snowScene, renderer, controls, composer, snowComposer, particleSystem, clock;
+var stats, camera, scene, snowScene, renderer, controls, controlGUI, composer, snowComposer, particleSystem, clock, cameraControl;
 
 var snowShader = THREE.SnowShader;
 var uniforms = THREE.UniformsUtils.clone( snowShader.uniforms );
@@ -16,8 +16,11 @@ function init()
 	var canvasRatio = canvasWidth / canvasHeight;
 	
 	// camera
-	camera = new THREE.PerspectiveCamera(45, canvasRatio, 1, 1000);
+	camera = new THREE.PerspectiveCamera(45, canvasRatio, 1, 5000);
 	camera.position.set(0, 100, 380);
+	
+	// var controlCamera = new THREE.PerspectiveCamera(45, canvasRatio, 1, 1000);
+	// controlCamera.position.set(0, 100, 380);
 	
 	// renderer
 	renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -58,6 +61,18 @@ function init()
 	finalPass.renderToScreen = true;
 	composer.addPass( modelPass );
 	composer.addPass( finalPass );
+	
+	// controls
+	controls = new THREE.OrbitControls( camera );
+	controls.addEventListener( 'change', render );
+	
+	controlsGUI = new dat.GUI();
+	var paramsGUI = { cameraControl: false };
+	onParametersUpdate = function( v ) {
+        cameraControl = !cameraControl;
+	}
+	
+	controlsGUI.add( paramsGUI, 'cameraControl').onChange( onParametersUpdate );
 }
 
 function createSnowMan( bModelPass )
@@ -275,12 +290,40 @@ function fillScene()
 	createGround(true);
 	createGrass(true);
 	
-	var planeGeometry = new THREE.PlaneGeometry(1024,1024);
+	// skybox
+	var path = "textures/Park3Med/";
+	var format = '.jpg';
+	var urls = [
+			path + 'px' + format, path + 'nx' + format,
+			path + 'py' + format, path + 'ny' + format,
+			path + 'pz' + format, path + 'nz' + format
+		];
+
+	var cubeMap = THREE.ImageUtils.loadTextureCube( urls );
+	// cubeMap.format = THREE.RGBFormat;
+
+	var shader = THREE.ShaderLib[ "cube" ];
+	shader.uniforms[ "tCube" ].value = cubeMap;
+
+	var skyboxMaterial = new THREE.ShaderMaterial( {
+
+		fragmentShader: shader.fragmentShader,
+		vertexShader: shader.vertexShader,
+		uniforms: shader.uniforms,
+		depthWrite: false,
+		side: THREE.BackSide
+
+	} );
+
+	var skybox = new THREE.Mesh( new THREE.CubeGeometry( 1500, 1500, 1500 ), skyboxMaterial );
+	scene.add( skybox );
 				
-	var material = new THREE.MeshBasicMaterial({color: 0x808080, map: THREE.ImageUtils.loadTexture( "textures/background.jpg") });//"https://dl.dropboxusercontent.com/u/35227757/WebGL/textures/background.jpg") });
-	var plane = new THREE.Mesh(planeGeometry, material);
-	plane.position.set(0, 0, -150);
-	scene.add(plane);
+	// var planeGeometry = new THREE.PlaneGeometry(1024,1024);
+				
+	// var material = new THREE.MeshBasicMaterial({color: 0x808080, map: THREE.ImageUtils.loadTexture( "textures/background.jpg") });//"https://dl.dropboxusercontent.com/u/35227757/WebGL/textures/background.jpg") });
+	// var plane = new THREE.Mesh(planeGeometry, material);
+	// plane.position.set(0, 0, -150);
+	// scene.add(plane);
 	
 	// lights
 	var dirLight = new THREE.DirectionalLight(0xFFFFFF, 0.2);
@@ -346,8 +389,13 @@ function fillSnowScene()
 function animate() 
 {
 	requestAnimationFrame( animate );
-	render();
 	stats.update();
+	render();
+	if(cameraControl)
+	{
+		controls.update();
+	}
+	// controlsGUI.update();
 	
 	var delta = clock.getDelta();
 	var elapsedTime = clock.getElapsedTime();
