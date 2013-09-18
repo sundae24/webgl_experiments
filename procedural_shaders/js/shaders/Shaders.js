@@ -1,13 +1,13 @@
 /**
  *  Author: Jing Jin http://jingjin.me/
  *  License: Copyright (C) 2013 Jing Jin.
- *	         Distributed under the MIT License. 
+ *  Distributed under the MIT License. 
  */
 
- THREE.ShaderChunk = {
+THREE.ShaderChunk = {
     
-    simplex_noise: [
-        //
+	simplex_noise: [
+		//
 		// Description : Array and textureless GLSL 2D/3D/4D simplex 
 		//               noise functions.
 		//      Author : Ian McEwan, Ashima Arts.
@@ -60,9 +60,9 @@
 			// Permutations
 			"i = mod289(i); ",
 			"vec4 p = permute( permute( permute( ",
-					 "i.z + vec4(0.0, i1.z, i2.z, 1.0 ))",
-				   "+ i.y + vec4(0.0, i1.y, i2.y, 1.0 )) ",
-				   "+ i.x + vec4(0.0, i1.x, i2.x, 1.0 ));",
+				"i.z + vec4(0.0, i1.z, i2.z, 1.0 ))",
+				"+ i.y + vec4(0.0, i1.y, i2.y, 1.0 )) ",
+				"+ i.x + vec4(0.0, i1.x, i2.x, 1.0 ));",
 
 			// Gradients: 7x7 points over a square, mapped onto an octahedron.
 			// The ring size 17*17 = 289 is close to a multiple of 49 (49*6 = 294)
@@ -106,13 +106,13 @@
 		  	"vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);",
 		  	"m = m * m;",
 		  	"return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), ",
-										"dot(p2,x2), dot(p3,x3) ) );",
+			"dot(p2,x2), dot(p3,x3) ) );",
 		"}"
-    ].join("\n"),
+	].join("\n"),
     
-    turbulence: [
+	turbulence: [
         
-        // turbulence:
+        	// turbulence:
 		"float turbulence(vec3 v) {",
         
 			"float sum = snoise(v);",
@@ -126,8 +126,8 @@
 			"return sum;",
             
 		"}"
-    ].join("\n")
- }
+	].join("\n")
+}
 
 THREE.WoodShader = {
 
@@ -169,7 +169,7 @@ THREE.WoodShader = {
 		
 		"void main(void) {",
 		
-            "vec3 worldNormal = normalize(vWorldNormal);",
+			"vec3 worldNormal = normalize(vWorldNormal);",
 			"vec3 woodTint = vec3(0.554, 0.258, 0.105);",
 			// wood pattern
 			"float g = (snoise(vTexCoord3D) + 1.0) * 2.5;",
@@ -221,28 +221,28 @@ THREE.MarbleShader = {
 		"varying vec3 vWorldNormal;",
 		
 		THREE.ShaderChunk["simplex_noise"],
-        THREE.ShaderChunk["turbulence"],
+        	THREE.ShaderChunk["turbulence"],
 		
 		"void main(void) {",
         
-            "vec3 worldNormal = normalize(vWorldNormal);",
-            "vec3 marbleTint = vec3(0.89, 0.89, 0.84);",
-            "vec3 specularColor = marbleTint * 0.7;",
-            // marble pattern
+			"vec3 worldNormal = normalize(vWorldNormal);",
+			"vec3 marbleTint = vec3(0.89, 0.89, 0.84);",
+			"vec3 specularColor = marbleTint * 0.7;",
+			// marble pattern
 			"float g = 0.5 * (1.0 + cos(10.0 * (vTexCoord3D.x + 0.5 * turbulence(vTexCoord3D))));",
 			"vec3 diffuseColor = (1.0 - pow(g, 5.0)) * 0.9 * marbleTint;",
 			// lambert diffuse
 			"float nDotL = max(dot(worldNormal, uLightDir), 0.0);",
-            "float diffuseWeight = nDotL;",
+			"float diffuseWeight = nDotL;",
 			// blinn specular
 			"vec3 halfVector = normalize(uLightDir + normalize(vViewDir));",
 			"float nDotH = max(dot(worldNormal, halfVector), 0.0);",
-            "float shininess = 50.0;",
+			"float shininess = 50.0;",
 			"float specularWeight = diffuseWeight > 0.0 ? pow(nDotH, shininess) : 0.0;",
-            
-            "vec3 diffuse = diffuseColor * uLightColor * diffuseWeight;",
-            "vec3 specular = specularColor * specularWeight;",
-            "vec3 ambient = diffuseColor * 0.15;",
+	            
+			"vec3 diffuse = diffuseColor * uLightColor * diffuseWeight;",
+			"vec3 specular = specularColor * specularWeight;",
+			"vec3 ambient = diffuseColor * 0.15;",
 			"gl_FragColor = vec4(diffuse + ambient + specular, 1.0);",		
             
 		"}"
@@ -255,22 +255,21 @@ THREE.LavaShader = {
 
 	uniforms: {
     
-        "elapsedTime": { type: 'f', value: 0.0 }
+		"elapsedTime": { type: 'f', value: 0.0 }
         
 	},
 
 	vertexShader: [
 
-        "uniform float elapsedTime;",
-        
+		"uniform float elapsedTime;",
 		"varying float noise;",
-        "varying vec3 vTexCoord3D;",
+		"varying vec3 vTexCoord3D;",
         
-        THREE.ShaderChunk["simplex_noise"],
+		THREE.ShaderChunk["simplex_noise"],
 		
 		"void main() {",
 
-            "vTexCoord3D = 0.06 * position + vec3(0.6 * elapsedTime);",
+			"vTexCoord3D = 0.06 * position + vec3(0.6 * elapsedTime);",
 			"noise = snoise(vTexCoord3D);",
 			"float displacement = 5.0 * noise;",
 			"gl_Position = projectionMatrix * modelViewMatrix * vec4(position + normal * displacement, 1.0 );",
@@ -282,16 +281,16 @@ THREE.LavaShader = {
 	fragmentShader: [
 
 		"varying float noise;",
-        "varying vec3 vTexCoord3D;",
+		"varying vec3 vTexCoord3D;",
 		
 		THREE.ShaderChunk["simplex_noise"],
-        THREE.ShaderChunk["turbulence"],
+		THREE.ShaderChunk["turbulence"],
 		
 		"void main(void) {",
         
-            "float grain = turbulence(vTexCoord3D);",
-            "grain = abs(grain);",
-            "gl_FragColor = vec4( vec3( 1.3 - grain, 0.8 - grain, 0.3 - grain), 1.0 );",
+			"float grain = turbulence(vTexCoord3D);",
+			"grain = abs(grain);",
+			"gl_FragColor = vec4( vec3( 1.3 - grain, 0.8 - grain, 0.3 - grain), 1.0 );",
             
 		"}"
 
