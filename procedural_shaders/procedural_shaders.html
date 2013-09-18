@@ -10,268 +10,268 @@
 		<script src="js/shaders/Shaders.js"></script>
 
 		<style>
-			body {
-				background-color: #eee;
-				height: 100%;
-				overflow: hidden;
-                background: #889db3; /* Old browsers */
-                background: -moz-linear-gradient(top,  #889db3 0%, #131313 100%); /* FF3.6+ */
-                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#889db3), color-stop(100%,#131313)); /* Chrome,Safari4+ */
-                background: -webkit-linear-gradient(top,  #889db3 0%,#131313 100%); /* Chrome10+,Safari5.1+ */
-                background: -o-linear-gradient(top,  #889db3 0%,#131313 100%); /* Opera 11.10+ */
-                background: -ms-linear-gradient(top,  #889db3 0%,#131313 100%); /* IE10+ */
-                background: linear-gradient(to bottom,  #889db3 0%,#131313 100%); /* W3C */
-                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#889db3', endColorstr='#131313',GradientType=0 ); /* IE6-9 */
-}
+		body {
+			background-color: #eee;
+			height: 100%;
+			overflow: hidden;
+	                background: #889db3; /* Old browsers */
+	                background: -moz-linear-gradient(top,  #889db3 0%, #131313 100%); /* FF3.6+ */
+	                background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#889db3), color-stop(100%,#131313)); /* Chrome,Safari4+ */
+	                background: -webkit-linear-gradient(top,  #889db3 0%,#131313 100%); /* Chrome10+,Safari5.1+ */
+	                background: -o-linear-gradient(top,  #889db3 0%,#131313 100%); /* Opera 11.10+ */
+	                background: -ms-linear-gradient(top,  #889db3 0%,#131313 100%); /* IE10+ */
+	                background: linear-gradient(to bottom,  #889db3 0%,#131313 100%); /* W3C */
+	                filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#889db3', endColorstr='#131313',GradientType=0 ); /* IE6-9 */
+		}
 			
-			div#info {
-				width: 100%;
-				text-align: center;
-				position: absolute;
-			}
+		div#info {
+			width: 100%;
+			text-align: center;
+			position: absolute;
+		}
 
-			@media (max-width: 480px) {
-				div.dg.ac { display: none; } 
-			}
+		@media (max-width: 480px) {
+			div.dg.ac { display: none; } 
+		}
 		</style>
 	</head>
 
 	<body>
 		<div id="info">
-        <a href="http://github.com/mrdoob/three.js" target="_blank">three.js</a> - 
-        <a href="https://github.com/ashima/webgl-noise" >simplex noise</a> - 
-        Procedual Shaders by <a href="http://jingjin.me/procedural-shaders-in-webgl">Jing Jin</a><br/>
-        Left click and drag to rotate, wheel to zoom
-        </div>
+		        <a href="http://github.com/mrdoob/three.js" target="_blank">three.js</a> - 
+		        <a href="https://github.com/ashima/webgl-noise" >simplex noise</a> - 
+		        Procedual Shaders by <a href="http://jingjin.me/procedural-shaders-in-webgl">Jing Jin</a><br/>
+		        Left click and drag to rotate, wheel to zoom
+	        </div>
 	</body>
 
 	<script>
 
-		if (! Detector.webgl) Detector.addGetWebGLMessage();
-		
-		var container, stats, gui;
+	if (! Detector.webgl) Detector.addGetWebGLMessage();
+	
+	var container, stats, gui;
 
-		var camera, scene, renderer, clock, controls;
+	var camera, scene, renderer, clock, controls;
 
-		var mesh, material, bTimeVaryingShader, elapsedTime;
+	var mesh, material, bTimeVaryingShader, elapsedTime;
 
-		var lightDir, lightColor, lightVisualizer, showLightVisualizer;
+	var lightDir, lightColor, lightVisualizer, showLightVisualizer;
         
-        // GUI
-		var SHADERS = {
-			WOOD: 	"Wood",
-			MARBLE: "Marble",
-			LAVA:  "Lava"
-		}
-		var MODELS = {
-			CUBE:    	"Cube", 
-			SPHERE:	 	"Sphere",
-			TORUSKNOT:	"TorusKnot"
-		};
-        var GUIProperties = function() {
-			this.shader             = SHADERS.WOOD;
-			this.model          = MODELS.SPHERE;
-            this.showLightVisualizer = false;
-		};
+	// GUI
+	var SHADERS = {
+		WOOD: 	"Wood",
+		MARBLE: "Marble",
+		LAVA:  "Lava"
+	}
+	var MODELS = {
+		CUBE:    	"Cube", 
+		SPHERE:	 	"Sphere",
+		TORUSKNOT:	"TorusKnot"
+	};
+	var GUIProperties = function() {
+		this.shader              = SHADERS.WOOD;
+		this.model               = MODELS.SPHERE;
+		this.showLightVisualizer = false;
+	};
 		
-		init();
-		animate(); 
+	init();
+	animate(); 
 		
-		function init() {
+	function init() {
 
-			container = document.createElement('div');
-			document.body.appendChild(container);
+		container = document.createElement('div');
+		document.body.appendChild(container);
 
-			// GUI
-			createGUI();
+		// GUI
+		createGUI();
 			
-			// CAMERAS
-			camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
-			camera.position.y = 60;
-			camera.position.z = 60;
+		// CAMERAS
+		camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 10000);
+		camera.position.y = 60;
+		camera.position.z = 60;
 
-			// SCENE
-			scene = new THREE.Scene();
-			scene.add(camera);
+		// SCENE
+		scene = new THREE.Scene();
+		scene.add(camera);
 
-			// LIGHT
-			lightDir = new THREE.Vector3(1.0, 1.0, 0.0); // point to light
-			lightColor = new THREE.Vector3(1.0, 1.0, 1.0);
-            showLightVisualizer = false;
+		// LIGHT
+		lightDir = new THREE.Vector3(1.0, 1.0, 0.0); // point to light
+		lightColor = new THREE.Vector3(1.0, 1.0, 1.0);
+		showLightVisualizer = false;
             
-            var points = [
-					new THREE.Vector3(-5, 0, 1),
-					new THREE.Vector3(-5, 0, -1),
-					new THREE.Vector3(5, 0, 1),
-					new THREE.Vector3(5, 0, -1),
-                    new THREE.Vector3(0, -5, 1),
-					new THREE.Vector3(0, -5, -1)
-				];
-            var partA = new THREE.Mesh(new THREE.ConvexGeometry(points), new THREE.MeshBasicMaterial({color:0xffffff}));
-            var partB = new THREE.Mesh(new THREE.CubeGeometry(5, 10, 2), new THREE.MeshBasicMaterial({color:0xffffff}));
-            partA.position.setY(55.0);
-            partB.position.setY(60.0);
-            lightVisualizer = new THREE.Object3D();
-            lightVisualizer.add(partA);
-            lightVisualizer.add(partB);
-            // rotate to match light direction
-            var cos = lightDir.normalize().dot(new THREE.Vector3(0, 1, 0));
-            var radians = Math.acos(cos) ;
-            var axis = new THREE.Vector3();
-            axis.crossVectors(new THREE.Vector3(0, 1, 0), lightDir);
-            rotateAroundWorldAxis(lightVisualizer, axis, radians);
-			scene.add(lightVisualizer);
+		var points = [
+			new THREE.Vector3(-5, 0, 1),
+			new THREE.Vector3(-5, 0, -1),
+			new THREE.Vector3(5, 0, 1),
+			new THREE.Vector3(5, 0, -1),
+			new THREE.Vector3(0, -5, 1),
+			new THREE.Vector3(0, -5, -1)
+		];
+		var partA = new THREE.Mesh(new THREE.ConvexGeometry(points), new THREE.MeshBasicMaterial({color:0xffffff}));
+		var partB = new THREE.Mesh(new THREE.CubeGeometry(5, 10, 2), new THREE.MeshBasicMaterial({color:0xffffff}));
+		partA.position.setY(55.0);
+		partB.position.setY(60.0);
+		lightVisualizer = new THREE.Object3D();
+		lightVisualizer.add(partA);
+		lightVisualizer.add(partB);
+		// rotate to match light direction
+		var cos = lightDir.normalize().dot(new THREE.Vector3(0, 1, 0));
+		var radians = Math.acos(cos) ;
+		var axis = new THREE.Vector3();
+		axis.crossVectors(new THREE.Vector3(0, 1, 0), lightDir);
+		rotateAroundWorldAxis(lightVisualizer, axis, radians);
+		scene.add(lightVisualizer);
+		
+		createMaterial(guiProperties.shader);
+		createMesh(guiProperties.model);
 			
-			createMaterial(guiProperties.shader);
+		// variables for lava shader
+		bTimeVaryingShader = false;
+		clock = new THREE.Clock();
+		elapsedTime = 0.0;
+		
+		// renderer
+		renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		
+		container.appendChild(renderer.domElement);
+		
+		// stats
+		stats = new Stats();
+		stats.domElement.style.position = 'absolute';
+		stats.domElement.style.top = '0px';
+		stats.domElement.style.left = '0px';
+		stats.domElement.style.zIndex = 100;
+		container.appendChild(stats.domElement);
+			
+		// control
+		controls = new THREE.OrbitControls(camera, renderer.domElement);
+		
+		window.addEventListener('resize', function() {
+		  renderer.setSize(window.innerWidth, window.innerHeight);
+		  camera.aspect = window.innerWidth / window.innerHeight;
+		  camera.updateProjectionMatrix();
+		});
+	}
+        
+	// Rotate an object around an arbitrary axis in world space 
+	function rotateAroundWorldAxis(object, axis, radians) {
+		var rotWorldMatrix = new THREE.Matrix4(); // function used only once in init
+		rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
+		rotWorldMatrix.multiply(object.matrix);
+		object.matrix = rotWorldMatrix;
+		object.rotation.setEulerFromRotationMatrix(object.matrix);
+	}
+		
+	function createMesh(type) {
+		var geometry;
+		switch(type) {
+			case MODELS.CUBE:
+				geometry = new THREE.CubeGeometry(50, 50, 50, 16, 16, 16);
+				break;
+			case MODELS.SPHERE:
+				geometry = new THREE.SphereGeometry(25, 64, 64);
+				break;
+			case MODELS.TORUSKNOT:
+				geometry = new THREE.TorusKnotGeometry(25, 6, 256, 20);
+				break;
+		}
+		mesh = new THREE.Mesh(geometry, material);
+		scene.add(mesh);
+	}
+	
+	function createMaterial(type) {
+		var shader;
+		var uniforms; 
+		switch(type) {
+			case SHADERS.WOOD:
+				shader = THREE.WoodShader;
+				uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+				uniforms["uLightDir"].value = lightDir.normalize();
+				uniforms["uLightColor"].value = lightColor;
+				bTimeVaryingShader = false;
+				break;
+			case SHADERS.MARBLE:
+				shader = THREE.MarbleShader;
+				uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+				uniforms["uLightDir"].value = lightDir.normalize();
+				uniforms["uLightColor"].value = lightColor;
+				bTimeVaryingShader = false;
+				break;
+			case SHADERS.LAVA:
+				shader = THREE.LavaShader;
+				uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+				uniforms["elapsedTime"].value = elapsedTime;
+				bTimeVaryingShader = true;
+				console.log(elapsedTime);
+				break;
+		}
+		
+		var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms };//, blending: THREE.AdditiveBlending};
+		material = new THREE.ShaderMaterial(parameters);
+	}
+
+	function createGUI() {
+		guiProperties = new GUIProperties();
+		gui = new dat.GUI();
+		var generalFolder = gui.addFolder("Options");
+	
+		var geometryTypes = [];
+		for(var type in MODELS)
+			geometryTypes.push(MODELS[type]);
+	
+		var shaderTypes = [];
+		for(var type in SHADERS)
+			shaderTypes.push(SHADERS[type]);
+		
+		var modelController = generalFolder.add(guiProperties, 'model', geometryTypes);
+		modelController.onChange(function(type) {
+			scene.remove(mesh);
+			createMesh(type);
+		});
+		
+		var shaderController = generalFolder.add(guiProperties, 'shader', shaderTypes);
+		shaderController.onChange(function(type) {
+			createMaterial(type);
+			scene.remove(mesh);
 			createMesh(guiProperties.model);
-			
-            // variables for lava shader
-            bTimeVaryingShader = false;
-            clock = new THREE.Clock();
-            elapsedTime = 0.0;
-            
-            // renderer
-			renderer = new THREE.WebGLRenderer({ antialias: true });
-			renderer.setSize(window.innerWidth, window.innerHeight);
-
-			container.appendChild(renderer.domElement);
-            
-			// stats
-			stats = new Stats();
-			stats.domElement.style.position = 'absolute';
-			stats.domElement.style.top = '0px';
-			stats.domElement.style.left = '0px';
-			stats.domElement.style.zIndex = 100;
-			container.appendChild(stats.domElement);
-			
-            // control
-			controls = new THREE.OrbitControls(camera, renderer.domElement);
-            
-			window.addEventListener('resize', function() {
-			  renderer.setSize(window.innerWidth, window.innerHeight);
-			  camera.aspect = window.innerWidth / window.innerHeight;
-			  camera.updateProjectionMatrix();
-			});
-		}
-        
-        // Rotate an object around an arbitrary axis in world space 
-        function rotateAroundWorldAxis(object, axis, radians) {
-            var rotWorldMatrix = new THREE.Matrix4(); // function used only once in init
-            rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-            rotWorldMatrix.multiply(object.matrix);
-            object.matrix = rotWorldMatrix;
-            object.rotation.setEulerFromRotationMatrix(object.matrix);
-        }
+		});
 		
-		function createMesh(type) {
-			var geometry;
-			switch(type) {
-				case MODELS.CUBE:
-					geometry = new THREE.CubeGeometry(50, 50, 50, 16, 16, 16);
-					break;
-				case MODELS.SPHERE:
-					geometry = new THREE.SphereGeometry(25, 64, 64);
-					break;
-				case MODELS.TORUSKNOT:
-					geometry = new THREE.TorusKnotGeometry(25, 6, 256, 20);
-					break;
+		var lightVisualizerController = generalFolder.add(guiProperties, 'showLightVisualizer', showLightVisualizer);
+		lightVisualizerController.name('visualize light');
+		lightVisualizerController.onChange(function(v) {
+			showLightVisualizer = !showLightVisualizer;
+		})
+	}
+
+	function animate() {
+		requestAnimationFrame(animate);
+		mesh.rotation.y += 0.01;
+			
+		if(bTimeVaryingShader) {
+			elapsedTime = clock.getElapsedTime();
+			material.uniforms.elapsedTime.value = elapsedTime;
+		}
+            
+		controls.update();
+		if(showLightVisualizer) {
+			for(var i = 0; i < lightVisualizer.children.length; i++) {
+				lightVisualizer.children[i].visible = true;
 			}
-			mesh = new THREE.Mesh(geometry, material);
-			scene.add(mesh);
-		}
-		
-		function createMaterial(type) {
-			var shader;
-			var uniforms; 
-			switch(type) {
-				case SHADERS.WOOD:
-					shader = THREE.WoodShader;
-					uniforms = THREE.UniformsUtils.clone(shader.uniforms);
-					uniforms["uLightDir"].value = lightDir.normalize();
-					uniforms["uLightColor"].value = lightColor;
-                    bTimeVaryingShader = false;
-					break;
-				case SHADERS.MARBLE:
-					shader = THREE.MarbleShader;
-					uniforms = THREE.UniformsUtils.clone(shader.uniforms);
-					uniforms["uLightDir"].value = lightDir.normalize();
-					uniforms["uLightColor"].value = lightColor;
-                    bTimeVaryingShader = false;
-					break;
-				case SHADERS.LAVA:
-					shader = THREE.LavaShader;
-					uniforms = THREE.UniformsUtils.clone(shader.uniforms);
-                    uniforms["elapsedTime"].value = elapsedTime;
-                    bTimeVaryingShader = true;
-                    console.log(elapsedTime);
-					break;
+		} else {
+			for(var i = 0; i < lightVisualizer.children.length; i++) {
+				lightVisualizer.children[i].visible = false;
 			}
-			
-			var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms };//, blending: THREE.AdditiveBlending};
-			material = new THREE.ShaderMaterial(parameters);
 		}
-
-		function createGUI() {
-			guiProperties = new GUIProperties();
-			gui = new dat.GUI();
-			var generalFolder = gui.addFolder("Options");
             
-			var geometryTypes = [];
-			for(var type in MODELS)
-				geometryTypes.push(MODELS[type]);
-                
-            var shaderTypes = [];
-            for(var type in SHADERS)
-				shaderTypes.push(SHADERS[type]);
-		
-			var modelController = generalFolder.add(guiProperties, 'model', geometryTypes);
-			modelController.onChange(function(type) {
-				scene.remove(mesh);
-				createMesh(type);
-			});
-            
-			var shaderController = generalFolder.add(guiProperties, 'shader', shaderTypes);
-			shaderController.onChange(function(type) {
-				createMaterial(type);
-				scene.remove(mesh);
-				createMesh(guiProperties.model);
-			});
-            
-            var lightVisualizerController = generalFolder.add(guiProperties, 'showLightVisualizer', showLightVisualizer);
-            lightVisualizerController.name('visualize light');
-            lightVisualizerController.onChange(function(v) {
-                showLightVisualizer = !showLightVisualizer;
-            })
-		}
-
-		function animate() {
-			requestAnimationFrame(animate);
-			mesh.rotation.y += 0.01;
-			
-            if(bTimeVaryingShader) {
-                elapsedTime = clock.getElapsedTime();
-                material.uniforms.elapsedTime.value = elapsedTime;
-            }
-            
-            controls.update();
-            if(showLightVisualizer) {
-                for(var i = 0; i < lightVisualizer.children.length; i++) {
-                    lightVisualizer.children[i].visible = true;
-                }
-            } else {
-                for(var i = 0; i < lightVisualizer.children.length; i++) {
-                    lightVisualizer.children[i].visible = false;
-                }
-            }
-            
-			camera.lookAt(mesh.position);
-			stats.update();
-            render();
-		}
+		camera.lookAt(mesh.position);
+		stats.update();
+		render();
+	}
         
-		function render() {
-			renderer.render(scene, camera);
-		}
+	function render() {
+		renderer.render(scene, camera);
+	}
 		
 	</script>
 </html>
